@@ -1,48 +1,21 @@
-import express, { json } from 'express';
-import cors from 'cors';
-import router from './routes.js';
-
-
-const app = express();
-app.use(json());
-app.use(cors());
-app.use(router)
-
-const port = process.env.PORT || 4000;
-
-app.listen(port, () => {
-    console.log('Server running at port ' + port);
-});
-
-/*
-import pkg from 'pg';
-
-const { Pool } = pkg;
-
-import * as dotenv from 'dotenv'
-dotenv.config()
-
 import dayjs from 'dayjs';
+import {connection} from './database.js'
 
-const connection = new Pool({
-    connectionString: process.env.DATABASE_URL,
-});
-
-app.get("/categories",async (req, res)=>{
+export async function getCategories (req, res){
     try{
     const categories = await connection.query('SELECT * FROM categories')
     res.send(categories.rows)
     }catch(err){res.sendStatus(500)}
-})
-app.post("/categories",async (req, res)=>{
+}
+export async function postCategories (req, res){
     const body = req.body;
     console.log(body);
     try{
     const categories = await connection.query('INSERT INTO categories (name) VALUES ($1)',[body.name])
     res.sendStatus(201)
     }catch(err){res.sendStatus(500)}
-})
-app.get("/games",async (req, res)=>{
+}
+export async function getGames(req, res){
     const gameName = req.query.name || ""; 
     try{
     const gamesPkg = await connection.query('SELECT * FROM games WHERE lower(name) LIKE $1',[gameName+"%"])
@@ -53,38 +26,39 @@ app.get("/games",async (req, res)=>{
     })
     res.send(games)
     }catch(err){console.log(err);res.sendStatus(500)}
-})
-app.post("/games",async (req, res)=>{
+}
+export async function postGames(req, res){
     const body = req.body;
     console.log(body);
     try{
     const games = await connection.query('INSERT INTO games (name,image,"stockTotal","categoryId","pricePerDay") VALUES ($1,$2,$3,$4,$5)',[body.name, body.image, body.stockTotal, body.categoryId, body.pricePerDay])
     res.sendStatus(201)
     }catch(err){console.log(err);res.sendStatus(500)}
-})
-app.get("/customers",async (req, res)=>{
+}
+export async function getCustomers (req, res){
     const cpf= req.query.cpf || "";
     try{
     const customers = await connection.query('SELECT * FROM customers WHERE cpf LIKE $1',[cpf+"%"])
     res.send(customers.rows)
     }catch(err){console.log(err);res.sendStatus(500)}
-})
-app.get("/customers/:id",async (req, res)=>{
+}
+export async function getCustomersById(req, res){
     const customerId = req.params.id; 
     try{
     const customers = await connection.query('SELECT * FROM customers WHERE id = $1',[customerId])
-    res.send(customers.rows[0])
+    if(customers.rowCount == 1)res.send(customers.rows[0]);
+    else{res.sendStatus(404)}
     }catch(err){console.log(err);res.sendStatus(500)}
-})
-app.post("/customers",async (req, res)=>{
+}
+export async function postCustomers (req, res){
     const body = req.body
     try{
     const customers = await connection.query('INSERT INTO customers (name,phone,cpf,birthday) VALUES ($1,$2,$3,$4)',
     [body.name, body.phone,body.cpf,body.birthday])
     res.sendStatus(201)
     }catch(err){console.log(err);res.sendStatus(500)}
-})
-app.put("/customers/:id",async (req, res)=>{
+}
+export async function putCustomers (req, res){
     const customerId = req.params.id; 
     const body = req.body
     try{
@@ -92,8 +66,8 @@ app.put("/customers/:id",async (req, res)=>{
     [body.name, body.phone,body.cpf,body.birthday,customerId])
     res.sendStatus(201)
     }catch(err){console.log(err);res.sendStatus(500)}
-})
-app.get("/rentals",async(req,res)=>{
+}
+export async function getRentals (req,res){
     const customerId = req.query.customerId || "";
     const gameId = req.query.gameId || "";
     try{
@@ -138,8 +112,8 @@ app.get("/rentals",async(req,res)=>{
         res.send(rentals);
 
     }catch(err){console.log(err);res.sendStatus(500)}
-})
-app.post("/rentals", async(req,res)=>{
+}
+export async function postRentals(req,res){
     const body = req.body
     const rentDate = dayjs().format('YYYY-MM-DD')
     try{
@@ -151,8 +125,8 @@ app.post("/rentals", async(req,res)=>{
         [body.customerId, body.gameId, rentDate, body.daysRented, null, originalPrice, null])
         res.sendStatus(201)
     }catch(err){console.log(err);res.sendStatus(500)}
-})
-app.post("/rentals/:id/return",async (req,res)=>{
+}
+export async function postRentalsById(req,res){
     const {id} = req.params
     console.log(id)
     const returnDate = dayjs();
@@ -173,16 +147,11 @@ app.post("/rentals/:id/return",async (req,res)=>{
 
         res.sendStatus(200)
     }catch(err){console.log(err);res.sendStatus(500)}
-})
-app.delete("/rentals/:id",async (req,res)=>{
+}
+export async function deleteRentals (req,res){
     const {id} = req.params
     try{
         const del = await connection.query('DELETE FROM rentals WHERE id=$1',[id]);
         res.sendStatus(200)
     }catch(err){res.sendStatus(500)}
-})
-
-
-
-
-*/
+}
