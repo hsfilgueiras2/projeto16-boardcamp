@@ -129,19 +129,45 @@ app.get("/rentals",async(req,res)=>{
 })
 app.post("/rentals", async(req,res)=>{
     const body = req.body
-    console.log(body)
     const rentDate = dayjs().format('YYYY-MM-DD')
     try{
         const dailyPrice = await (await connection.query('SELECT games."pricePerDay" FROM games WHERE id=$1',[body.gameId])).rows[0].pricePerDay
-        console.log(dailyPrice)
         const originalPrice = dailyPrice * body.daysRented;
-        console.log(originalPrice)
         const rentals = await connection.query('INSERT INTO rentals '+
         '("customerId","gameId","rentDate","daysRented","returnDate","originalPrice","delayFee")'+
         'VALUES ($1,$2,$3,$4,$5,$6,$7)',
         [body.customerId, body.gameId, rentDate, body.daysRented, null, originalPrice, null])
         res.sendStatus(201)
     }catch(err){console.log(err);res.sendStatus(500)}
+})
+app.post("/rentals/:id/return",async (req,res)=>{
+    const {id} = req.params
+    console.log(id)
+    const returnDate = dayjs();
+    const returnDateStr = returnDate.format('YYYY-MM-DD')
+    console.log(returnDate)
+    try{
+        const rental = await (await connection.query('SELECT * FROM rentals WHERE id=$1',[id])).rows[0]
+        console.log(rental)
+        const dailyPrice = await (await connection.query('SELECT games."pricePerDay" FROM games WHERE id=$1',[rental.gameId])).rows[0].pricePerDay
+        console.log(dailyPrice)
+        const dayDiff = returnDate.diff(rental.rentDate, "days");
+        let delayFee =null;
+        if ( dayDiff > rental.daysRented){
+            delayFee = (dayDiff-daysRented)*dailyPrice
+        }
+        const rentalUpdt = await connection.query('UPDATE rentals SET "delayFee"=$1, "returnDate"=$2 WHERE id=$3',
+        [delayFee, returnDateStr,id])
+
+        res.sendStatus(200)
+    }catch(err){console.log(err);res.sendStatus(500)}
+})
+app.delete("/rentals/:id",async (req,res)=>{
+    const {id} = req.params
+    try{
+        const del = await connection.query('DELETE FROM rentals WHERE id=$1',[id]);
+        res.sendStatus(200)
+    }catch(err){res.sendStatus(500)}
 })
 
 
